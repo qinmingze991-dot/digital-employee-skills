@@ -1,0 +1,12 @@
+{
+  "name": "digital-employee-skills",
+  "version": "0.1.0-preview.1",
+  "private": true,
+  "type": "module",
+  "description": "Public distribution preview of the digital-employee-connect Skill",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test",
+    "validate": "node tools/validate.mjs"
+  }
+}

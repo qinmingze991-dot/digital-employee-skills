@@ -1,0 +1,4 @@
+interface:
+  display_name: "数字员工接入"
+  short_description: "安装和检查数字员工接入 Skill，区分本地文件、宿主加载与平台绑定状态"
+  default_prompt: "使用 $digital-employee-connect 检查当前宿主的安装状态并报告可用能力。"

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+artifacts/
+*.log
+*.zip
+.env
+.env.*
+*.pem
+*.key
+.digital-employee-install.json

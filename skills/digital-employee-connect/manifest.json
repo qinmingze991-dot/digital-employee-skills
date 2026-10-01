@@ -1,0 +1,27 @@
+{
+  "schema": "digital-employee-skill/1",
+  "name": "digital-employee-connect",
+  "version": "0.1.0-preview.1",
+  "files": [
+    {
+      "path": "SKILL.md",
+      "sha256": "c1b46ff04b97826794d38d5b2096b77f0d680ad070b34011a60c1729da110a4b"
+    },
+    {
+      "path": "agents/openai.yaml",
+      "sha256": "10da7ef392e23be8789d102f7cf779a6c905b7b95eec12c7455df23295270672"
+    },
+    {
+      "path": "scripts/core.mjs",
+      "sha256": "f866b6446bf5e172446ab981cb40841acb9c71f0580cb8b03771addc9e55371f"
+    },
+    {
+      "path": "references/qoder.md",
+      "sha256": "3856b83df637482aae0bf2868fadea6e9cf9730e6e5c03ec207312f4be4de646"
+    },
+    {
+      "path": "references/kimi.md",
+      "sha256": "0331c3fa14fc30f18527304650b616b2da5171555a03e9e968c03dda866eca57"
+    }
+  ]
+}
