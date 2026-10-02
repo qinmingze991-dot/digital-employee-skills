@@ -1,6 +1,6 @@
 {
   "name": "digital-employee-skills",
-  "version": "0.1.0-preview.1",
+  "version": "0.1.1-preview.1",
   "private": true,
   "type": "module",
   "description": "Public distribution preview of the digital-employee-connect Skill",

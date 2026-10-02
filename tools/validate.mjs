@@ -25,4 +25,4 @@ for (const relative of paths) {
   }
 }
 console.log(JSON.stringify({ validation: 'PASS', version: pkg.version, payloadFiles: source.manifest.files.length,
-  deviceBinding: 'NOT_AVAILABLE', nativeActivation: 'NOT_VERIFIED' }));
+  deviceBinding: 'RELEASE_NOT_AVAILABLE', nativeActivation: 'NOT_VERIFIED' }));

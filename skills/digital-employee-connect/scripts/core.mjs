@@ -6,10 +6,12 @@ import { fileURLToPath } from 'node:url';
 
 export const NAME = 'digital-employee-connect';
 export const SCHEMA = 'digital-employee-skill/1';
-export const PAYLOAD = Object.freeze([
+const LEGACY_PAYLOAD = Object.freeze([
   'SKILL.md', 'agents/openai.yaml', 'scripts/core.mjs',
   'references/qoder.md', 'references/kimi.md',
 ]);
+export const PAYLOAD = Object.freeze([...LEGACY_PAYLOAD, 'release-channel.json',
+  'scripts/bootstrap.mjs', 'scripts/bootstrap.ps1', 'scripts/expand-client.ps1', 'references/native-helper.md']);
 const RECEIPT = '.digital-employee-install.json';
 const SOURCE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const HASH = /^[a-f0-9]{64}$/;
@@ -83,8 +85,9 @@ function parseManifest(bytes) {
   requireThat(exactKeys(manifest, ['schema', 'name', 'version', 'files']), 'INVALID_MANIFEST');
   requireThat(manifest.schema === SCHEMA && manifest.name === NAME
     && typeof manifest.version === 'string' && manifest.version.length <= 80 && VERSION.test(manifest.version), 'INVALID_MANIFEST');
-  requireThat(Array.isArray(manifest.files) && manifest.files.length === PAYLOAD.length, 'INVALID_MANIFEST');
-  const expected = new Set(PAYLOAD);
+  const payload = manifest.version.startsWith('0.1.0') ? LEGACY_PAYLOAD : PAYLOAD;
+  requireThat(Array.isArray(manifest.files) && manifest.files.length === payload.length, 'INVALID_MANIFEST');
+  const expected = new Set(payload);
   for (const item of manifest.files) {
     requireThat(exactKeys(item, ['path', 'sha256']) && expected.delete(item.path)
       && typeof item.sha256 === 'string' && HASH.test(item.sha256), 'INVALID_MANIFEST');
@@ -96,7 +99,7 @@ function verifySnapshot(files, { receiptAllowed = false } = {}) {
   requireThat(files.has('manifest.json'), 'MANIFEST_MISSING');
   const manifestBytes = files.get('manifest.json');
   const manifest = parseManifest(manifestBytes);
-  const allowed = new Set([...PAYLOAD, 'manifest.json', ...(receiptAllowed ? [RECEIPT] : [])]);
+  const allowed = new Set([...manifest.files.map(item => item.path), 'manifest.json', ...(receiptAllowed ? [RECEIPT] : [])]);
   requireThat([...files.keys()].every(name => allowed.has(name)), 'UNTRACKED_FILES');
   for (const item of manifest.files) {
     requireThat(files.has(item.path) && digest(files.get(item.path)) === item.sha256, 'INTEGRITY_MISMATCH');
@@ -148,7 +151,7 @@ export async function detectHost(ctx, host) {
   return {
     host, hostDirectoryDetected: Boolean(stat?.isDirectory() && !stat.isSymbolicLink()),
     target: targetPath(ctx, host), pathSource: host === 'qoder' ? 'QODER_IDE_DOCUMENTED_USER_DIRECTORY' : 'KIMI_WORK_WINDOWS_DIRECTORY',
-    nativeActivation: 'NOT_VERIFIED', deviceBinding: 'NOT_AVAILABLE',
+    nativeActivation: 'NOT_VERIFIED', deviceBinding: 'NOT_CHECKED',
   };
 }
 async function inspectTarget(ctx, host) {
@@ -174,7 +177,7 @@ export async function verifyInstall(ctx, host) {
   requireThat(installed, 'NOT_INSTALLED');
   return {
     status: 'FILES_VERIFIED', name: NAME, host, version: installed.manifest.version,
-    managedByInstaller: Boolean(installed.receipt), nativeActivation: 'NOT_VERIFIED', deviceBinding: 'NOT_AVAILABLE',
+    managedByInstaller: Boolean(installed.receipt), nativeActivation: 'NOT_VERIFIED', deviceBinding: 'NOT_CHECKED',
   };
 }
 export async function planInstall(ctx, host) {
@@ -255,7 +258,7 @@ export async function installSkill(ctx, host, { replace = false } = {}) {
     }
     return {
       status: 'FILES_INSTALLED', name: NAME, host, version: source.manifest.version,
-      target, backup, nativeActivation: 'NOT_VERIFIED', deviceBinding: 'NOT_AVAILABLE',
+      target, backup, nativeActivation: 'NOT_VERIFIED', deviceBinding: 'NOT_CHECKED',
     };
   });
 }
@@ -284,7 +287,7 @@ export async function doctor(ctx, host) {
   return {
     status: 'LOCAL_CHECK_COMPLETE', version: source.manifest.version, nodeVersion: process.versions.node,
     ...detection, installed, networkRequests: 0, platform: 'NOT_CONTACTED',
-    employeeExecution: 'NOT_AVAILABLE', storageContainsCredentials: false,
+    employeeExecution: 'NOT_CHECKED', credentialStorage: 'NOT_INSPECTED',
   };
 }
 function parseArgs(argv) {
@@ -305,20 +308,25 @@ async function main(argv) {
   const { command, options } = parseArgs(argv);
   if (['help', '--help'].includes(command)) {
     requireThat(Object.keys(options).length === 0, 'INVALID_ARGUMENTS');
-    return { name: NAME, commands: ['info', 'detect', 'plan', 'install', 'verify', 'doctor', 'uninstall'],
+    return { name: NAME, commands: ['info', 'detect', 'plan', 'install', 'verify', 'doctor', 'uninstall', 'connect', 'status', 'next', 'respond', 'run', 'result', 'close'],
       usage: 'node scripts/core.mjs COMMAND --host qoder|kimi',
       update: 'install --host qoder|kimi --replace',
       remove: 'uninstall --host qoder|kimi --confirm digital-employee-connect',
-      deviceBinding: 'NOT_AVAILABLE' };
+      deviceBinding: 'NOT_CHECKED' };
   }
   requireThat(Number(process.versions.node.split('.')[0]) >= 22, 'NODE_22_REQUIRED');
   if (command === 'info') {
     requireThat(Object.keys(options).length === 0, 'INVALID_ARGUMENTS');
     const source = await readSource({ source: SOURCE });
     return { name: NAME, version: source.manifest.version, manifestSha256: source.manifestSha256,
-      status: 'SOURCE_VERIFIED', nativeActivation: 'NOT_VERIFIED', deviceBinding: 'NOT_AVAILABLE', employeeExecution: 'NOT_AVAILABLE' };
+      status: 'SOURCE_VERIFIED', nativeActivation: 'NOT_VERIFIED', deviceBinding: 'NOT_CHECKED', employeeExecution: 'NOT_CHECKED' };
   }
-  if (['bind', 'connect', 'employees', 'run'].includes(command)) throw new SkillError('FEATURE_NOT_AVAILABLE');
+  if (['connect', 'status', 'next', 'respond', 'run', 'result', 'close'].includes(command)) {
+    requireThat(Object.keys(options).length === 1 && ['qoder', 'kimi'].includes(options['--host']), 'INVALID_ARGUMENTS');
+    const { clientCommand } = await import('./bootstrap.mjs');
+    return clientCommand(context(), command, options['--host']);
+  }
+  if (['bind', 'employees'].includes(command)) throw new SkillError('FEATURE_NOT_AVAILABLE');
   requireThat(['detect', 'plan', 'install', 'verify', 'doctor', 'uninstall'].includes(command), 'UNKNOWN_COMMAND');
   const validKeys = command === 'install' ? ['--host', '--replace']
     : command === 'uninstall' ? ['--host', '--confirm'] : ['--host'];

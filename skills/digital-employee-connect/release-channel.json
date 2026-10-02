@@ -1,0 +1,11 @@
+{
+  "schema": "digital-employee-release-channel/1",
+  "releaseBase": "https://github.com/qinmingze991-dot/digital-employee-skills/releases/download/v0.1.1-preview.1",
+  "releaseUrl": "https://github.com/qinmingze991-dot/digital-employee-skills/releases/download/v0.1.1-preview.1/client-release.json",
+  "platformOrigin": "https://s.souvi.com",
+  "publicKey": null,
+  "keyId": null,
+  "nodeVersion": "24.18.0",
+  "nodeUrl": "https://nodejs.org/dist/v24.18.0/win-x64/node.exe",
+  "nodeSha256": "9a4eb5f1c29c6a2e93852ead46b999e284a6a5ca8bab4d4e241d587d025a52de"
+}
