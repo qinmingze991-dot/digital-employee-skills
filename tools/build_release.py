@@ -7,7 +7,8 @@ args=parser.parse_args()
 root=Path(__file__).resolve().parent.parent
 source=root/'skills'/'digital-employee-connect'
 manifest=json.loads((source/'manifest.json').read_text(encoding='utf-8'))
-allowed={'SKILL.md','agents/openai.yaml','scripts/core.mjs','references/qoder.md','references/kimi.md'}
+allowed={'SKILL.md','agents/openai.yaml','scripts/core.mjs','references/qoder.md','references/kimi.md',
+         'release-channel.json','scripts/bootstrap.mjs','scripts/bootstrap.ps1','scripts/expand-client.ps1','references/native-helper.md'}
 assert manifest['schema']=='digital-employee-skill/1'
 assert manifest['name']=='digital-employee-connect'
 assert len(manifest['files'])==len(allowed)
@@ -20,7 +21,8 @@ out=Path(args.out).resolve()
 assert not out.is_relative_to(root), 'Release artifacts must remain outside source repository'
 out.mkdir(parents=True,exist_ok=True)
 archive=out/('digital-employee-connect-v'+manifest['version']+'.zip')
-with zipfile.ZipFile(archive,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as z:
+assert not archive.exists() and not (out/'SHA256SUMS').exists(), 'Refuse overwriting existing artifacts'
+with zipfile.ZipFile(archive,'x',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as z:
     for relative in sorted(allowed|{'manifest.json'}):
         info=zipfile.ZipInfo('digital-employee-connect/'+relative,date_time=(1980,1,1,0,0,0))
         info.compress_type=zipfile.ZIP_DEFLATED

@@ -30,7 +30,7 @@ async function fixture({ kimi = true } = {}) {
   if (kimi) await fs.mkdir(path.join(roaming, 'kimi-desktop', 'daimon-share', 'daimon', 'skills'), { recursive: true });
   return { root, source, other, ctx: context({ platform: 'win32', home, roaming, local, source }) };
 }
-async function newVersion(f, version = '0.1.0-preview.2') {
+async function newVersion(f, version = '0.1.1-preview.2') {
   const manifestPath = path.join(f.source, 'manifest.json');
   const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8'));
   const oldVersion = manifest.version;
@@ -53,7 +53,7 @@ test('plan is read-only and new install preserves unrelated content', async () =
   assert.equal(result.nativeActivation, 'NOT_VERIFIED');
   const verified = await verifyInstall(f.ctx, 'qoder');
   assert.equal(verified.managedByInstaller, true);
-  assert.equal(verified.deviceBinding, 'NOT_AVAILABLE');
+  assert.equal(verified.deviceBinding, 'NOT_CHECKED');
   assert.equal(await fs.readFile(f.other, 'utf8'), 'unrelated user content');
 });
 
@@ -86,9 +86,9 @@ test('update needs confirmation and retains byte-exact old version', async () =>
   await rejectsCode(() => installSkill(f.ctx, 'qoder'), 'REPLACE_CONFIRMATION_REQUIRED');
   assert.deepEqual(await fs.readFile(path.join(first.target, 'SKILL.md')), before);
   const updated = await installSkill(f.ctx, 'qoder', { replace: true });
-  assert.equal(updated.version, '0.1.0-preview.2');
+  assert.equal(updated.version, '0.1.1-preview.2');
   assert.deepEqual(await fs.readFile(path.join(updated.backup, 'SKILL.md')), before);
-  assert.equal((await verifyInstall(f.ctx, 'qoder')).version, '0.1.0-preview.2');
+  assert.equal((await verifyInstall(f.ctx, 'qoder')).version, '0.1.1-preview.2');
   assert.equal(await fs.readFile(f.other, 'utf8'), 'unrelated user content');
 });
 
@@ -96,7 +96,7 @@ test('same version with different content refuses replacement', async () => {
   const f = await fixture();
   await installSkill(f.ctx, 'qoder');
   await fs.appendFile(path.join(f.source, 'SKILL.md'), '\nEdited without version bump.\n');
-  await newVersion(f, '0.1.0-preview.1');
+  await newVersion(f, '0.1.1-preview.1');
   await rejectsCode(() => installSkill(f.ctx, 'qoder', { replace: true }), 'SAME_VERSION_DIFFERENT_CONTENT');
 });
 
@@ -221,7 +221,7 @@ test('Qoder update preserves separate Kimi installation', async () => {
   await newVersion(f);
   await installSkill(f.ctx, 'qoder', { replace: true });
   assert.deepEqual(await fs.readFile(path.join(kimi.target, 'SKILL.md')), before);
-  assert.equal((await verifyInstall(f.ctx, 'kimi')).version, '0.1.0-preview.1');
+  assert.equal((await verifyInstall(f.ctx, 'kimi')).version, '0.1.1-preview.1');
 });
 
 test('local doctor does not claim activation, account binding or network access', async () => {
@@ -229,8 +229,8 @@ test('local doctor does not claim activation, account binding or network access'
   await installSkill(f.ctx, 'kimi');
   const data = await doctor(f.ctx, 'kimi');
   assert.equal(data.nativeActivation, 'NOT_VERIFIED');
-  assert.equal(data.deviceBinding, 'NOT_AVAILABLE');
-  assert.equal(data.employeeExecution, 'NOT_AVAILABLE');
+  assert.equal(data.deviceBinding, 'NOT_CHECKED');
+  assert.equal(data.employeeExecution, 'NOT_CHECKED');
   assert.equal(data.networkRequests, 0);
   assert.equal(data.platform, 'NOT_CONTACTED');
 });
